@@ -1,4 +1,4 @@
-#include<Windows.h>
+п»ї#include<Windows.h>
 //#define MESSAGE_BOX
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nCmdShow)
 {
@@ -6,7 +6,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
 	MessageBox
 	(
 		NULL,
-		"Hello WinAPI!\nЭто MessageBox, детка.",
+		"Hello WinAPI!\nР­С‚Рѕ MessageBox, РґРµС‚РєР°.",
 		NULL,
 		MB_YESNOCANCEL | MB_ICONQUESTION
 		| MB_HELP
