@@ -2,6 +2,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <Windows.h>
 #include <cstdio>
+#include"resource.h"
 
 CONST CHAR g_sz_MY_WINDOW_CLASS[] = "My Window"; //Имя Класса окна
 
@@ -19,10 +20,16 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0; //cb... - Count Bytes
 
+	wc.hIcon =(HICON) LoadImage(hInstance,"ocean.ico",IMAGE_ICON,LR_DEFAULTSIZE,LR_DEFAULTSIZE,LR_LOADFROMFILE);
+	wc.hIconSm =(HICON) LoadImage(hInstance,"crab.ico",IMAGE_ICON,LR_DEFAULTSIZE,LR_DEFAULTSIZE,LR_LOADFROMFILE);
+
 	//связаны с внешним видом
-	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	wc.hIconSm=LoadIcon(NULL, IDI_APPLICATION);
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	/*wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	wc.hIconSm=LoadIcon(NULL, IDI_APPLICATION);*/
+
+
+	//wc.hCursor = LoadCursor(hInstance, MAKEINTRESOURCE(IDC_CURSOR1));
+	wc.hCursor =(HCURSOR) LoadImage(hInstance, "cursors\\starcraft-original\\Busy.ani", IMAGE_CURSOR, LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE);
 	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
 
 	//
