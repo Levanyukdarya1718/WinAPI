@@ -11,8 +11,10 @@ CONST INT g_i_BUTTON_SIZE = 50;
 CONST INT g_i_INTERVAL = 5;
 CONST INT g_i_BUTTON_DOUBLE_SIZE = g_i_BUTTON_SIZE * 2 + g_i_INTERVAL;
 
+CONST INT g_i_FONT_HEIGHT = 32;
+CONST INT g_i_FONT_WIDTH = g_i_FONT_HEIGHT * 2 / 5;
 CONST INT g_i_DISPLAY_WIDTH = (g_i_BUTTON_SIZE)*5+g_i_INTERVAL*4;
-CONST INT g_i_DISPLAY_HEIGHT = 22;
+CONST INT g_i_DISPLAY_HEIGHT = g_i_FONT_HEIGHT+4;
 
 CONST INT g_i_START_X = 10;
 CONST INT g_i_START_Y = 10;
@@ -28,6 +30,12 @@ CONST INT g_i_WINWOW_HEIGHT = g_i_DISPLAY_HEIGHT + g_i_START_Y * 2 + (g_i_BUTTON
 
 
 CONST CHAR* g_OPERATIONS[] = { "+", "-", "*", "/" };
+
+CONST COLORREF g_DISPLAY_BACKGROUND[] = { RGB(0,0,100), RGB(0,0,0) };
+CONST COLORREF g_DISPLAY_FOREGROUND[] = { RGB(255,0,0), RGB(0,0,250) };
+CONST COLORREF g_WINDOW_BACKGROUND[] =  { RGB(0,0,150), RGB(0,50,0) };
+
+
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 VOID SetSkin(HWND hwnd, CONST CHAR* skin);
@@ -46,6 +54,10 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
 	wClass.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
 	wClass.hCursor = LoadCursor(hInstance, IDC_ARROW);
 	wClass.hbrBackground = (HBRUSH)COLOR_WINDOW;
+
+	HBITMAP hBackground = (HBITMAP)LoadImage(hInstance, "Picture\\cosmo.bmp", IMAGE_BITMAP, 0, 0,LR_LOADFROMFILE);
+	wClass.hbrBackground = CreatePatternBrush(hBackground);
+
 
 	wClass.hInstance = hInstance;
 	wClass.lpszClassName = g_sz_CLASS_NAME;
@@ -92,6 +104,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	static INT operation = 0;
 	static bool input = FALSE;
 	static bool input_operation = FALSE;
+	/////////////////////////////////////
+	
+	static INT color_index = 0; 
+
+    ////////////////////////////////////
 
 	switch (uMsg)
 	{
@@ -111,7 +128,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			GetModuleHandle(NULL),
 			NULL
 		);
+		AddFontResourceEx("Fonts\\Calculator.ttf", FR_PRIVATE, 0);
+		HFONT hFont = CreateFont(
+			g_i_FONT_HEIGHT, g_i_FONT_WIDTH,
+			0, //Escapement - Наклон шрифта в десятках градусов
+			0, //Orientation
+			FW_BOLD, //wEIGHT - ТОЛЩИНА
+			FALSE, //Italic - КУРСОВ
+			FALSE, //Underline - подчеркнутый
+			FALSE, //Strikeout -перечеркнутый
+			ANSI_CHARSET,
+			OUT_TT_PRECIS,
+			CLIP_TT_ALWAYS, ANTIALIASED_QUALITY,
+			FF_DONTCARE,
+			"Calculator"
 
+		);
+		SendMessage(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
 		//TODO: Button Icons.
 		CHAR sz_digit[2] = "0";
 		for (int i = 6; i >= 0; i -= 3)
@@ -220,6 +253,26 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		);
 		SetSkin(hwnd, "square_blue");
 	}
+		break;
+		case WM_CTLCOLOREDIT:
+		{
+			HDC hdc = (HDC)wParam;
+			HWND hEdit = (HWND)lParam;
+			if (GetDlgCtrlID(hEdit) == IDC_EDIT_DISPLAY)
+			{
+				SetTextColor(hdc, g_DISPLAY_FOREGROUND[color_index] );
+				SetBkColor(hdc, g_DISPLAY_BACKGROUND[color_index]);
+
+				HBRUSH hbrBackground = CreateSolidBrush(g_WINDOW_BACKGROUND[color_index]);
+				SetClassLongPtr(hwnd, GCLP_HBRBACKGROUND, (LONG)hbrBackground);
+				SendMessage(hwnd, WM_ERASEBKGND, wParam, 0);
+				return(LRESULT)hbrBackground;
+
+				
+
+			}
+			
+		}
 		break;
 	case WM_COMMAND:
 	{
@@ -439,19 +492,37 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		InsertMenu(hMenu,0, MF_BYPOSITION | MF_POPUP, (UINT_PTR)hSubmenuSkins, "Skins");
 		InsertMenu(hMenu, 1, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
 		InsertMenu(hMenu, 2, MF_BYPOSITION | MF_STRING, IDR_EXIT, "Exit");
-		switch (TrackPopupMenu(hMenu, TPM_LEFTALIGN | TPM_BOTTOMALIGN | TPM_RETURNCMD, LOWORD(lParam), HIWORD(lParam), 0, hwnd, 0))
+		INT skin_index = TrackPopupMenu(hMenu, TPM_LEFTALIGN | TPM_BOTTOMALIGN | TPM_RETURNCMD, LOWORD(lParam), HIWORD(lParam), 0, hwnd, 0);
+		switch (skin_index)
 		{
-		case IDR_SQUARE_BLUE:SetSkin(hwnd, "square_blue"); break;
+		case IDR_SQUARE_BLUE:SetSkin(hwnd, "square_blue"); break; color_index = IDR_CONTEXT_MENU - IDR_SQUARE_BLUE + 1;
 		case IDR_METAL_MISTRAL:SetSkin(hwnd, "metal_mistral"); break;
 		case IDR_EXIT: DestroyWindow(hwnd);
 
 		}
+
 		DestroyMenu(hSubmenuSkins);
 		DestroyMenu(hMenu);
+		
+		color_index = skin_index - IDR_CONTEXT_MENU - 1;
+		HWND hEditDisplay = GetDlgItem(hwnd, IDC_EDIT_DISPLAY);
+		HDC hdcDisplay = GetDC(hEditDisplay);
+		SendMessage(hEditDisplay, WM_CTLCOLORDLG, (LPARAM)hdcDisplay, (LPARAM)hEditDisplay);
+		ReleaseDC (hEditDisplay, hdcDisplay);
+		CHAR sz_buffer[MAX_PATH]{};
+		SendMessage(hEditDisplay, WM_GETTEXT, MAX_PATH, (LPARAM)sz_buffer);
+		SendMessage(hEditDisplay, WM_SETTEXT, 0, (LPARAM)sz_buffer);
 
 	}
+	break;
 	case WM_DESTROY:
+	{
+		HWND hEdit = GetDlgItem(hwnd, IDC_EDIT_DISPLAY);
+		HDC hdc = GetDC(hEdit);
+
+		ReleaseDC(hEdit, hdc);
 		PostQuitMessage(0);
+	}
 		break;
 	case WM_CLOSE:
 		DestroyWindow(hwnd);
