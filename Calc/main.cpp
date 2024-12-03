@@ -39,6 +39,7 @@ CONST COLORREF g_WINDOW_BACKGROUND[] =  { RGB(0,0,150), RGB(0,50,0) };
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 VOID SetSkin(HWND hwnd, CONST CHAR* skin);
+VOID SetSkinFromDLL(HWND hwnd, CONST CHAR* skin);
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nCmdShow)
 {
 	//1)  Регистрация класса окна
@@ -495,8 +496,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		INT skin_index = TrackPopupMenu(hMenu, TPM_LEFTALIGN | TPM_BOTTOMALIGN | TPM_RETURNCMD, LOWORD(lParam), HIWORD(lParam), 0, hwnd, 0);
 		switch (skin_index)
 		{
-		case IDR_SQUARE_BLUE:SetSkin(hwnd, "square_blue"); break; color_index = IDR_CONTEXT_MENU - IDR_SQUARE_BLUE + 1;
-		case IDR_METAL_MISTRAL:SetSkin(hwnd, "metal_mistral"); break;
+		case IDR_SQUARE_BLUE:SetSkinFromDLL(hwnd, "square_blue"); break; color_index = IDR_CONTEXT_MENU - IDR_SQUARE_BLUE + 1;
+		case IDR_METAL_MISTRAL:SetSkinFromDLL(hwnd, "metal_mistral"); break;
 		case IDR_EXIT: DestroyWindow(hwnd);
 
 		}
@@ -515,8 +516,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			CHAR sz_buffer[MAX_PATH]{};
 			SendMessage(hEditDisplay, WM_GETTEXT, MAX_PATH, (LPARAM)sz_buffer);
 			SendMessage(hEditDisplay, WM_SETTEXT, 0, (LPARAM)sz_buffer);
-		}
-
+		} 
 	}
 	break;
 	case WM_DESTROY:
@@ -578,4 +578,24 @@ VOID SetSkin(HWND hwnd, CONST CHAR* skin)
 		SendMessage(hButton, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)bmpButton);
 
 	}
+}
+VOID SetSkinFromDLL(HWND hwnd, CONST CHAR* skin)
+{
+	CHAR filename[MAX_PATH]{};
+	sprintf(filename, "ButtonBMP\\%s", skin);
+	HMODULE hInst = LoadLibrary(filename);
+	for (int i = 0; i <= IDC_BUTTON_EQUAL; i++)
+	{
+		HBITMAP buttonBMP = (HBITMAP)LoadImage
+		(
+			hInst,
+			MAKEINTRESOURCE(i+100),
+			IMAGE_BITMAP,
+			i > IDC_BUTTON_0 ? g_i_BUTTON_SIZE : g_i_BUTTON_DOUBLE_SIZE,
+			i < IDC_BUTTON_EQUAL - IDC_BUTTON_0 ? g_i_BUTTON_SIZE : g_i_BUTTON_DOUBLE_SIZE,
+			NULL
+		);
+		SendMessage(GetDlgItem(hwnd, IDC_BUTTON_0 + i), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)buttonBMP);
+	}
+	FreeLibrary(hInst);
 }
