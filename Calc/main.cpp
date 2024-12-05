@@ -108,6 +108,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	/////////////////////////////////////
 	
 	static INT color_index = 0; 
+	static	HANDLE hMyFont = NULL;
 
     ////////////////////////////////////
 
@@ -130,6 +131,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			NULL
 		);
 		AddFontResourceEx("Fonts\\Calculator.ttf", FR_PRIVATE, 0);
+		HINSTANCE hInstFont = LoadLibrary("..\\Debug\\FontOnlyDLL.dll");
+		HRSRC  hFontRes = FindResource(hInstFont, MAKEINTRESOURCE(99), "BINARY");
+		HGLOBAL hFntMem = LoadResource(hInstFont, hFontRes);
+		VOID* fntData= LockResource(hFntMem);	
+		DWORD nFonts = 0;
+		DWORD len = SizeofResource(hInstFont, hFontRes);
+		hMyFont = AddFontMemResourceEx(fntData, len, nullptr, &nFonts);
+
+		//..-выход ы родительский каталог
+			
 		HFONT hFont = CreateFont(
 			g_i_FONT_HEIGHT, g_i_FONT_WIDTH,
 			0, //Escapement - Наклон шрифта в десятках градусов
@@ -142,10 +153,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			OUT_TT_PRECIS,
 			CLIP_TT_ALWAYS, ANTIALIASED_QUALITY,
 			FF_DONTCARE,
-			"Calculator"
+			"GildeBroad"
 
 		);
 		SendMessage(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
+		FreeLibrary(hInstFont);
 		//TODO: Button Icons.
 		CHAR sz_digit[2] = "0";
 		for (int i = 6; i >= 0; i -= 3)
@@ -496,6 +508,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		INT skin_index = TrackPopupMenu(hMenu, TPM_LEFTALIGN | TPM_BOTTOMALIGN | TPM_RETURNCMD, LOWORD(lParam), HIWORD(lParam), 0, hwnd, 0);
 		switch (skin_index)
 		{
+		RemoveFontMemResourceEx(hMyFont);
 		case IDR_SQUARE_BLUE:SetSkinFromDLL(hwnd, "square_blue"); break; color_index = IDR_CONTEXT_MENU - IDR_SQUARE_BLUE + 1;
 		case IDR_METAL_MISTRAL:SetSkinFromDLL(hwnd, "metal_mistral"); break;
 		case IDR_EXIT: DestroyWindow(hwnd);
@@ -584,18 +597,18 @@ VOID SetSkinFromDLL(HWND hwnd, CONST CHAR* skin)
 	CHAR filename[MAX_PATH]{};
 	sprintf(filename, "ButtonBMP\\%s", skin);
 	HMODULE hInst = LoadLibrary(filename);
-	for (int i = 0; i <= IDC_BUTTON_EQUAL; i++)
+	for (int i = IDC_BUTTON_0; i <= IDC_BUTTON_EQUAL; i++)
 	{
 		HBITMAP buttonBMP = (HBITMAP)LoadImage
 		(
 			hInst,
-			MAKEINTRESOURCE(i+100),
+			MAKEINTRESOURCE(i),
 			IMAGE_BITMAP,
 			i > IDC_BUTTON_0 ? g_i_BUTTON_SIZE : g_i_BUTTON_DOUBLE_SIZE,
-			i < IDC_BUTTON_EQUAL - IDC_BUTTON_0 ? g_i_BUTTON_SIZE : g_i_BUTTON_DOUBLE_SIZE,
+			i < IDC_BUTTON_EQUAL ? g_i_BUTTON_SIZE : g_i_BUTTON_DOUBLE_SIZE,
 			NULL
 		);
-		SendMessage(GetDlgItem(hwnd, IDC_BUTTON_0 + i), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)buttonBMP);
+		SendMessage(GetDlgItem(hwnd, i), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)buttonBMP);
 	}
 	FreeLibrary(hInst);
 }
